@@ -250,10 +250,9 @@
 					departuretime = matchRe(/(\d\d:\d\d)$/im,val,1).trim();
 					*/
 					//---
-					var issueddate = matchRe(/ISO:\s*\w\w\s+(\d\d\w\w\w\d\d+)\s/m,val,1).trim();
-					if(!issueddate) issueddate = matchRe(/Issue\s+date:\s*(\d\d\s[A-Z]+\s\d\d)/im,val,1).trim()
-				    alert('issueddate='+issueddate)
-					var  month=matchRe(/\d\d(\w\w\w)\d\d+/m,issueddate,1).trim();
+					var issueddate = matchRe(/Date:\s+(\d{2}\w{3}\d{4})/gm,val,1).trim();
+				    //alert('issueddate='+issueddate)
+					var  month=matchRe(/Date:\s+\d{2}(\w{3})\d{4}/gm,issueddate,1).trim();
 					//var  month=matchRe(/\d\d\s*([A-Z]+)\s*\d\d/m,issueddate,1).trim();
 					alert('month='+month)
 					switch(month.toUpperCase()){
