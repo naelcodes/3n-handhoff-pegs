@@ -242,7 +242,7 @@
 						}
 					}
 					//---
-					var departuretime = matchRe(/\s+(\d\d:\d\d)\s+\w\w/im,val,1).trim();
+					var departuretime = matchRe(/[A-Z]{2}\d{2,4}\s+(\d{2}:\d{2})/gm,val,1).trim();
 					//alert('here:')
 					/*if(!departuretime){
 						departuretime = matchRe(/\n+(?:\w{3}\s+)?\d\d\w{3}\n+(\d\d:\d\d)$/im,val,1).trim();
