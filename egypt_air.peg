@@ -306,7 +306,7 @@
 						default:   month="" ;				   break;
 					}
 					//var day = issueddate[0]+issueddate[1];
-					var day = matchRe(/(\d\d)\w\w\w\d\d+/m,issueddate,1).trim();
+					var day = matchRe(/Date:\s+(\d{2})\w{3}\d{4}/gm,issueddate,1).trim();
 					var year ;
 
 					issueddate =year1+"-"+(parseFloat(month)+1)+"-"+day;
