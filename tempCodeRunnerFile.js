@@ -1,0 +1,1 @@
+console.log(segments_data);

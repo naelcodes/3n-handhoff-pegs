@@ -1,6 +1,7 @@
 	//Name: EGYPT Air
 	//New Keys: egyptair
 	//Date: 27/12/2022  
+	
 
 					//********globals functions********************
 					{
@@ -167,7 +168,11 @@
 					//prompt("Copy to clipboard: Ctrl+C, Enter",val);
 
 					var nbtkt = 0;
+
+					//* $------Update
 					var date1 = matchRe(/Date:\s+\d{2}\w{3}(\d{4})/gm,val,1).trim()
+					//*-------$
+
 					//if(!date1) date1 = matchRe(/ISO:\s*\w\w\s+\d\d\w\w\w(\d\d+)\s/m,val,1).trim()
 					// if (date1.length == 2){
 					// var year1="20"+date1
@@ -177,8 +182,11 @@
 					var agent = "00";//matchRe(/ISSUED BY :\s+(\w+)/im,val,1).trim()
 					// Handle case of IDT format that hase not agent. set it to 00
 					//if(agent == "") agent = "00";
-					//--
+					
+					//* $------Update
 					var cuco = matchRe(/taxes:\s*([A-Z]{3})\s+/gmi,val,1).trim();
+					//*-------$
+
 					// Currency rate
 					var cur_rate = 1;
 					//var rate = matchRe(/EXCHANGE\sRATE\s:\s((?:.){8})\s[A-Z]{3}/im, val,1);
@@ -212,7 +220,11 @@
 						var serfee1 = [{"name":"Service Fee","amount":serfee}]
 					}*/
 					//---
+
+					//* $------Update
 					var _fop = matchRe(/form of payment:\s+(\w+)\s/gmi,val,1).trim();
+					//* --------$
+
 					var fop = [];
 					switch(_fop.toUpperCase()){
 						case "CASH": fop[0] = "cash";break;
@@ -226,10 +238,13 @@
 					var _fopref = matchRe(/Payment\s+:\s+\w+\s(\w*)/im,val,1).trim();
 					var fopref = [""];
 					if(_fopref!="") fopref[0]= _fopref;
-					//---
+
+					//* $------Update
 					var classe = matchRe(/class:\s+([A-Z])\s+/gmi,val,1).trim();
 					// Service class table
 					var cl = val.match(/class:\s+([A-Z])\s+/gmi);
+					//*-------$
+
 					var cl1 = ['y','Y','Y','Y'], clcab1 = ["economy","economy","economy","economy","economy","economy",];//alert('here')
 					//alert('classe:'+classe)
 					if(cl){
@@ -241,18 +256,24 @@
 							else if( /R|P|F|A/.test(cl1[i])) clcab1[i] = "first"
 						}
 					}
-					//---
+
+					//* $------Update
 					var departuretime = matchRe(/[A-Z]{2}\d{2,4}\s+(\d{2}:\d{2})/gm,val,1).trim();
+					//*--------$
+
 					//alert('here:')
 					/*if(!departuretime){
 						departuretime = matchRe(/\n+(?:\w{3}\s+)?\d\d\w{3}\n+(\d\d:\d\d)$/im,val,1).trim();
 					}
 					departuretime = matchRe(/(\d\d:\d\d)$/im,val,1).trim();
 					*/
-					//---
+					//* $-----Update
 					var issueddate = matchRe(/Date:\s+(\d{2}\w{3}\d{4})/gm,val,1).trim();
 				    //alert('issueddate='+issueddate)
+ 
 					var  month=matchRe(/Date:\s+\d{2}(\w{3})\d{4}/gm,issueddate,1).trim();
+					//*-------$
+
 					//var  month=matchRe(/\d\d\s*([A-Z]+)\s*\d\d/m,issueddate,1).trim();
 					alert('month='+month)
 					switch(month.toUpperCase()){
@@ -306,13 +327,20 @@
 						default:   month="" ;				   break;
 					}
 					//var day = issueddate[0]+issueddate[1];
-					var day = matchRe(/Date:\s+(\d{2})\w{3}\d{4}/gm,issueddate,1).trim();
-					var year ;
 
+					//* $----Update
+					var day = matchRe(/Date:\s+(\d{2})\w{3}\d{4}/gm,issueddate,1).trim();
+					//* --------$
+					
+					var year ;
 					issueddate =year1+"-"+(parseFloat(month)+1)+"-"+day;
 					alert('issueddate:'+issueddate)
 					//---
-					var airlinecode = 725;//matchRe(/TICKET\sNUMBER\s+:\s(\d{3})\s\d{10}/im,val,1).trim();
+
+					//* $-----Update
+					var airlinecode = matchRe(/ticket\snumber\s*:\s*(\d{3})\s\d{10}\s*-\s\d{2}/mi,val,1).trim();
+					//* --------$
+
 					//--Number of ticket
 					//---
 					var reg=/(?:TICKET|EMD)\s+NUMBER\??\s+:/img;
@@ -362,7 +390,7 @@
 					var passenger = val.match(/PASSENGER\sNAME\s+:\s+\*?(.+)/img);
 					if(!passenger) passenger = val.match(/Traveler\s+(.+)/img);
 
-					////alert('passenger='+passenger)
+					//alert('passenger='+passenger)
 					for(var i=0;i<nbtkt;i++){
 						var pax = passenger[i]
 						passenger[i] = matchRe(/PASSENGER\sNAME\s+:\s(.+)/im,pax,1).trim();
