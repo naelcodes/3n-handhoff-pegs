@@ -7,7 +7,7 @@
 
             
             let NBTKTSEG = 0; 
-            let totalfarenet =[0]
+            let totalfarenet =[]
             let nbtkt = 0;
             let itinerary = "";
             let totrash = false;
@@ -379,32 +379,45 @@ HEADER_VALUE = val:TEXT {
 
         let tax_group_tab = getNamedGroupMatchReg(tax_group_regex,val,'tax_group');
         
-        for(const tax_group of tax_group_tab){
-            if(tax_regex.test(tax_group)){
-                let _taxes = getTaxes(tax_regex,tax_group);
-                let ticket_airtax=[];
-                let ticket_airtax_total=0;
+        let fare_regex = /Fare:?\s*(?<fare>IT\s*Fare)/i;
+        let fare_value_ITFare_regex = /IT\s*Fare/i;
+        let {fare} = getGroupMatchReg(fare_regex,val,'fare');
+        let isFare_Equal_ITFare = fare_value_ITFare_regex.test(fare);
 
-                for(const {airtax_amount,airtax_code} of _taxes){
+       
+        if(!isFare_Equal_ITFare){
+                for(const tax_group of tax_group_tab){
+                if(tax_regex.test(tax_group)){
+                    let _taxes = getTaxes(tax_regex,tax_group);
+                    let ticket_airtax=[];
+                    let ticket_airtax_total=0;
 
-                    if(airtax_amount){
-                        _airtax_amount = parseFloat(airtax_amount);
-                        ticket_airtax.push({"code":airtax_code,"amount":_airtax_amount});
-                        ticket_airtax_total+=_airtax_amount
+                    for(const {airtax_amount,airtax_code} of _taxes){
 
+                        if(airtax_amount){
+                            _airtax_amount = parseFloat(airtax_amount);
+                            ticket_airtax.push({"code":airtax_code,"amount":_airtax_amount});
+                            ticket_airtax_total+=_airtax_amount
+
+                        }
                     }
-                }
-                airtax.push(ticket_airtax);
-                airtax_total.push(ticket_airtax_total);
+                    airtax.push(ticket_airtax);
+                    airtax_total.push(ticket_airtax_total);
+                    
                 
-               
-            }else{
-                airtax.push([]);
-                airtax_total.push(0);
-             
-            }
+                }else{
+                    airtax.push([]);
+                    airtax_total.push(0);
+                
+                }
 
+            }
+        }else{
+            airtax.push([]);
+            airtax_total.push(0);
         }
+
+        
         
          alert('airtax_total='+airtax_total);
          totaltax=airtax_total;
@@ -470,7 +483,7 @@ HEADER_VALUE = val:TEXT {
         let m;
         while ((m = stopover_airport_regex.exec(_itinerary)) !== null) {
             let { route } = m.groups;
-            route = `${route} ${route}`;
+            
             _itinerary = _itinerary.replace(/X\/(?<route>\w{3})/, route);
         
         }
@@ -493,8 +506,7 @@ HEADER_VALUE = val:TEXT {
        
        //* $----------airline iata code 
 
-         let airlineiatacodes = initTab(NBTKTSEG,"");
-         let airline_iata = "";
+         let airline_iata = "MS";
 
         //* ------------------$
     
@@ -690,21 +702,32 @@ HEADER_VALUE = val:TEXT {
         let negfare = pubfare;
         let agent = "";
 
-        //? $---------- Unsure
-        for(var i=0;i<nbtkt;i++){
-            total_price.push(parseFloat(pubfare[i]) + parseFloat(totaltax[i]) - parseFloat(discamount) - parseFloat(penality) + parseFloat(totalfeenet));
+        
+         
+       
+            for(var i=0;i<nbtkt;i++){
+                if(!isFare_Equal_ITFare){
+                total_price.push(parseFloat(pubfare[i]) + parseFloat(totaltax[i]) - parseFloat(discamount) - parseFloat(penality) + parseFloat(totalfeenet));
+                
+                remittance.push(parseFloat(pubfare[i]) + parseFloat(totaltax[i]) - parseFloat(comamount));
             
-            remittance.push(parseFloat(pubfare[i]) + parseFloat(totaltax[i]) - parseFloat(comamount));
-           
-            markup.push(pubfare[i] - negfare[i]);
-           
-            total_net_collection = parseFloat(comamount) + parseFloat(totalfeenet) + parseFloat(markup[i]);
-           
-            totalfarenet.push(parseFloat(pubfare[i]) + parseFloat(totaltax[i]));
+                markup.push(pubfare[i] - negfare[i]);
             
-	    }
+                total_net_collection = parseFloat(comamount) + parseFloat(totalfeenet) + parseFloat(markup[i]);
+            
+                totalfarenet.push(parseFloat(pubfare[i]) + parseFloat(totaltax[i]));
+            }else{
+                total_price.push(0);
+                remittance.push(0);
+                markup.push(0);
+                totalfarenet.push(0);
+              }              
+            }
+         
+            
+         
 
-        //? *----------------------
+      
 
         // Building sales
         let booking = [];
