@@ -7,7 +7,7 @@
 
             
             let NBTKTSEG = 0; 
-            let totalfarenet =[]
+            let totalfarenet =[];
             let nbtkt = 0;
             let itinerary = "";
             let totrash = false;
@@ -131,7 +131,7 @@
              }
 
              const getReservationClass = (reserv_class) => {
-                let _class = "unknown";
+                let _class = "economy";
                 const economy_class_regex = /G|K|Q|X|Y|T|V|N|M|L|H|B|S|W/;
                 const premium_class_regex = /U|E/;
                 const bussiness_class_regex = /Z|I|D|C|J/;
@@ -295,8 +295,8 @@ HEADER_VALUE = val:TEXT {
         //*---------$
 
 
-       // *------ service fee  & total fee 
-       let totalfee = initTab(nbtkt,0);
+       // *------ service fee  
+     
        let serfee = initTab(nbtkt,[]);
 
         //* -----------------$
@@ -310,7 +310,7 @@ HEADER_VALUE = val:TEXT {
 
             switch (_fop.toUpperCase()) {
                 case "CASH": _fop = "cash"; break;
-                case "CC": _fop = "nonref"; break;
+                case "CC": _fop = "credit_card"; break;
                 case "CREDIT": _fop = "nonref"; break;
                 case "CHECK": _fop = "check"; break;
                 default: _fop = "nonref";
@@ -341,7 +341,7 @@ HEADER_VALUE = val:TEXT {
         //*  $----------- Passenger
 
         let passenger_regex = /(?<passenger>(?:[A-Z]+\s+)+\(\w{3}\))/g;
-        let passenger = getNamedGroupMatchReg(passenger_regex, val,'passenger');
+        let passenger = getNamedGroupMatchReg(passenger_regex, val,'passenger') || "";
 
         alert("passenger="+passenger);
 
