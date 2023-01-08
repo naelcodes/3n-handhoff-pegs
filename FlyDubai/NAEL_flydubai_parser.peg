@@ -1,0 +1,920 @@
+//Name: Flydubai
+//New keys: Flydubai
+//Date: 08/01/2023
+
+//********globals functions********************
+    {
+
+        let NBTKTSEG = 0;
+        let totalfarenet =[];
+        let nbtkt = 0;
+        let itinerary = "";
+        let totrash = false;
+        let errmsg = "";
+        let counter = 0;
+
+
+        //* $ ------- Regex matchers
+
+        let matchRe = function (re,str,index){
+                            let rer=str.match(re)
+                return (rer==null ||rer==undefined)?"":""+rer[index]
+                }
+
+        let getGroupMatchReg = (regex, str) => {
+                let m = regex.exec(str);
+                return (m !== null) ? m.groups : "";
+            };
+
+        let getAllGroupsMatchReg = (regex, str) => {
+            let data = [];
+            let m;
+            while ((m = regex.exec(str)) !== null) {
+                data.push(m.groups);
+            }
+            return data;
+        };
+
+        let getNamedGroupMatchReg = (regex,str,groupName)=>{
+            let data=[];
+            let m;
+                while ((m = regex.exec(str)) !== null) {
+                data.push(m.groups[groupName]);
+            }
+            return data;
+            }
+
+            //* ------------------$
+        let convertMonth = (month) => {
+            switch(month.toUpperCase()){
+                    case "JAN":month="00";				   break;
+                    case "Jan":month="00";				   break;
+                    case "JANUARY":month="00";				   break;
+                    case "JANVIER":month="00";				   break;
+                    case "FEB":month="01";				   break;
+                    case "Feb":month="01";				   break;
+                    case "FEBRUARY":month="01";				   break;
+                    case "FEVRIER":month="01";				   break;
+                    case "MAR":month="02";				   break;
+                    case "Mar":month="02";				   break;
+                    case "MARCH":month="02";				   break;
+                    case "MARS":month="02";				   break;
+                    case "APR":month="03";				   break;
+                    case "Apr":month="03";				   break;
+                    case "APRIL":month="03";				   break;
+                    case "AVRIL":month="03";				   break;
+                    case "MAY":month="04";				   break;
+                    case "May":month="04";				   break;
+                    case "MAI":month="04";				   break;
+                    case "JUN":month="05";				   break;
+                    case "Jun":month="05";				   break;
+                    case "JUNE":month="05";				   break;
+                    case "JUIN":month="05";				   break;
+                    case "JUL":month="06";				   break;
+                    case "Jul":month="06";				   break;
+                    case "JULY":month="06";				   break;
+                    case "JUILLET":month="06";				   break;
+                    case "Aug":month="07";				   break;
+                    case "AUG":month="07";				   break;
+                    case "AUGUST":month="07";				   break;
+                    case "AOUT":month="07";				   break;
+                    case "SEP":month="08";				   break;
+                    case "Sep":month="08";				   break;
+                    case "SEPTEMBER":month="08";				   break;
+                    case "SEPTEMBRE":month="08";				   break;
+                    case "Oct":month="09";				   break;
+                    case "OCT":month="09";				   break;
+                    case "OCTOBER":month="09";				   break;
+                    case "OCTOBRE":month="09";				   break;
+                    case "NOV":month="10";				   break;
+                    case "Nov":month="10";				   break;
+                    case "NOVEMBER":month="10";				   break;
+                    case "NOVEMBRE":month="10";				   break;
+                    case "DEC":month="11";				   break;
+                    case "Dec":month="11";				   break;
+                    case "DECEMBER":month="11";				   break;
+                    case "DECEMBRE":month="11";				   break;
+                    default:   month="" ;				 break;
+                }
+                return month;
+        }
+
+
+        let getTicketInfo = (regex, str) => {
+            let ticketInfo = { _airlinecode: "", _ticketnumber: [], _conjnumber: [] };
+            let m;
+            while ((m = regex.exec(str)) !== null) {
+                if (ticketInfo._airlinecode === "") {
+                    ticketInfo._airlinecode = m.groups.airlinecode;
+                }
+                ticketInfo._ticketnumber.push(m.groups.ticketnumber);
+                ticketInfo._conjnumber.push(m.groups.conjnumber);
+            }
+
+            return ticketInfo;
+        };
+
+
+            let getTaxes = (regex,str)=>{
+            let taxes = [];
+            let m;
+                while ((m = regex.exec(str)) !== null) {
+                taxes.push({airtax_amount:m.groups.airtax_amount,
+                airtax_code:m.groups.airtax_code});
+            }
+            return taxes;
+            }
+
+            const getReservationClass = (reserv_class) => {
+            let _class = "unknown";
+            const economy_class_regex = /G|K|Q|X|Y|T|V|N|M|L|H|B|S|W/;
+            const premium_class_regex = /U|E/;
+            const bussiness_class_regex = /Z|I|D|C|J/;
+            const first_class_regex = /R|P|F|A/;
+
+            if (economy_class_regex.test(reserv_class)) {
+                _class = "economy";
+            }
+            else if (premium_class_regex.test(reserv_class)) {
+                _class = "premium";
+            }
+            else if (bussiness_class_regex.test(reserv_class)) {
+                _class = "business";
+            }
+            else if (first_class_regex.test(reserv_class)) {
+                _class = "first";
+            }
+
+            return _class;
+
+        };
+
+        const getPNRstatusCodeValue = (code)=> {
+        let value="Holding Confirmed";
+        switch (code){
+            case 'HK': value = 'Holding Confirmed'; break;
+            case 'OK': value = 'Holding Confirmed'; break;
+            case 'HL': value = 'Holding Waitlist'; break;
+            case 'BK': value = 'Passive Sold Segment, or Booked outside'; break;
+            case 'BL': value = 'Booked outside and Waitlisted'; break;
+            case 'BN': value = 'Booked outside and Requested'; break;
+            case 'AK': value = 'Confirmed outside'; break;
+            case 'AL': value = 'Waitlist outside'; break;
+            case 'AN': value = 'Requested outside'; break;
+            case 'GK': value = 'Passive Sold Segment'; break;
+            case 'NO': value = 'Open Segment'; break;
+            case 'PB': value = 'Holding Waitlist'; break;
+            default: value = 'Holding Confirmed';
+            }
+
+            return value;
+            }
+
+
+            let initTab = (length,value) => {
+            let tab = [];
+            for(let i=0; i < length; i++){
+                tab.push(value)
+            }
+            return tab;
+            }
+    }
+
+
+//**********************************
+
+START= HEADER_VALUE
+
+//*********** globals
+
+TEXT=.*
+cr = "\n"
+delim1 = "This document is automatically generated."
+delim2 = "Please do not respond to this mail."
+delim3 = (" FROM " / " DE ")
+delim4 = ("/TO        " / "/À           ")
+delim5 = (" AT CHECK-IN, PLEASE SHOW A PICTURE IDENTIFICATION AND THE DOCUMENT YOU GAVE"/ " A L'ENREGISTREMENT, VOUS DEVREZ PRESENTER UNE PIECE D'IDENTITE AVEC")
+delim6 = (" FOR REFERENCE AT RESERVATION TIME" / " PHOTOGRAPHIE, ET LE DOCUMENT DONT VOUS AVEZ DONNE LA REFERENCE A LA")
+delim7 = ("FLIGHT(S) CALCULATED AVERAGE CO2 EMISSIONS IS 1435.71 KG/PERSON" / "L'ÉMISSION CO2 MOYENNE CALCULÉE EST")
+delim8 = "SOURCE :"
+delim9= "\f"
+
+/*******************************************/
+
+//HEADER Block
+
+HEADER_VALUE = val:TEXT {
+        val = val.join("");
+        let is_html = val.match(/<html>/img);
+        if(is_html){
+            // Convert HTML to TEXT
+            val = val.replace(/<tr>/g,'<br>');
+            val = val.replace(/<br>\s?/g,'\r');
+            val = val.replace(/<\/?b>/g,'*');
+            val = val.replace(/<\/font>/g,' ');
+            val = val.replace(/&gt;/g,'');
+            val = val.replace(/&lt;/g,'');
+            val = val.replace(/&nbsp;/g,' ');
+            val = val.replace(/#.*\n\n/g,'');
+            val = val.replace(/<[^>]+>/g,'');
+            val = val.replace(/^\s+([\w\*])/gm,'$1');
+            val = val.replace(/(\w)\s+$/gm,'$1');
+            val = val.replace(/\r\r\r/g,'');
+        }
+       
+
+
+        // *----------  issuing Date
+
+        let {day,month,year} = getGroupMatchReg(/Booked\s*on\s*(?<day>\d{2})\s*(?<month>\w+)\s*(?<year>\d{4})/i,val);
+
+        let issueddate = [year,parseFloat(convertMonth(month))+1,day].join("-");
+
+        //* ----------$
+
+        //* ------------$ TicketInfo ( airline code, ticketNumber, conjunctionNumber)
+        let ticketInfoReg =  /(?<airlinecode>\d{3})\s+(?<ticketnumber>\d{10})(?:\s-\s(?<conjnumber>\d{2}))?/g;
+
+        const ticketnumber = [];
+        const conjnumber = [];
+        let airlinecode = "";
+        // if ticket number exist
+        if(ticketInfoReg.test(val)){
+        const {_airlinecode,_ticketnumber,_conjnumber }= getTicketInfo(ticketInfoReg,val);
+
+        airlinecode = _airlinecode;
+        ticketnumber = _ticketnumber;
+        conjnumber = _conjnumber || [];
+
+        if(ticketnumber){
+            ticketnumber.forEach(_ticket_number => {
+                if(isNaN(parseFloat(_ticket_number))){
+                    errmsg = 'Ticket Number missing';
+                    totrash = true;
+                }
+            })
+        }
+        }else{
+            airlinecode="141";
+            ticketnumber.push("");
+            conjnumber.push("");
+        }
+
+         alert('airlinecode='+airlinecode);
+         alert('ticketnumber='+ticketnumber);
+         alert('conjnumber='+conjnumber);
+        //*---------------$
+
+
+         //* $----------  Number of Ticket
+		  nbtkt = ticketnumber.length;
+          alert('nbtkt='+nbtkt);
+        //* -------------$
+
+         //* $---------  document Type
+        let doctype = initTab(nbtkt,"eticket");
+        //* --------------$
+
+
+        //* $---------- extract segments region
+        const segments_region_regex = /(?<segments_region>Departure[\.,+:\-\w\s\(\)|/]+(?:\s*Terminal\s*\w){1,2}(?:.|\s)+?)Passenger\s*total/i;
+
+        let { segments_region } = getGroupMatchReg(segments_region_regex, val);
+        // alert('segments_region:'+segments_region);
+        //* ---------------$
+
+        //* ----------- Departure & arrival dates
+        const departuredates = [];
+        const arrivaldates = [];
+        const departure_arrival_dates_regex = /(?:(?<departure_day>\d{2})\s*(?<departure_month>[A-Za-z]+)\s*(?<departure_year>\d{4}),\s*[A-Za-z]+\s*(?<arrival_day>\d{2})\s*(?<arrival_month>[A-Za-z]+)\s*(?<arrival_year>\d{4}),\s*[A-Za-z]+)/g;
+
+        const departure_arrival_dates = getAllGroupsMatchReg(departure_arrival_dates_regex, segments_region);
+        
+        departure_arrival_dates.forEach(({ departure_day, departure_month, departure_year, arrival_day, arrival_month, arrival_year }) => {
+            departuredates.push([departure_year, parseFloat(convertMonth(departure_month)) + 1, departure_day].join("-"));
+            arrivaldates.push([arrival_year, parseFloat(convertMonth(arrival_month)) + 1, arrival_day].join("-"));
+
+        });
+
+        //*-------------- $
+
+
+        //* $--------------- Number of Segments
+        NBTKTSEG =  departure_arrival_dates ? departure_arrival_dates.length : 0;
+        alert("NBTKTSEG="+NBTKTSEG);
+
+        //* -------------$
+
+         //* $------------ Departure date & Return date
+
+         const departuredate = departuredates.length > 0 ? departuredates[0] : issueddate;
+         const returndate = arrivaldates[arrivaldates.length-1];
+
+        //* --------------$
+
+
+        //* $----------  currency value
+
+        const currency_regex = /Taxes\/fees\s*\w+\s(?<currency>[A-Z]{3})/i;
+        let {currency} = getGroupMatchReg(currency_regex,val);
+        let currency_rate = 1;
+
+        //*---------$
+
+
+       // *------ service fee  
+       const service_fee_regex = /(?:Transaction|Administration)\s*fee\s*[A-Z]{3}\s*(?<service_fee>\d+[.,]\d+)/i;
+       const {service_fee} = getGroupMatchReg(service_fee_regex,val);
+        alert("serfee:"+service_fee);
+       let serfee = initTab(nbtkt,parseFloat(service_fee)||[]);
+
+        //* -----------------$
+
+        //* $------  form of payment
+
+        const fop_regex = /(?<_fop>card\s*number|apple\s*pay)\s*:/ig;
+        let fop_list = getAllGroupsMatchReg(fop_regex,val);
+        
+        let fop= [];
+        if(fop_list.length > 0){
+          for (let { _fop } of fop_list) {
+            if(_fop){
+             _fop = _fop.toLowerCase() === "card number" ? "CC" : _fop;
+            }
+            else{
+                _fop ="";
+            }
+           
+            switch (_fop.toUpperCase()) {
+                case "CASH": _fop = "cash"; break;
+                case "CC": _fop = "credit_card"; break;
+                case "CREDIT": _fop = "nonref"; break;
+                case "CHECK": _fop = "check"; break;
+                default: _fop = "nonref";
+            };
+            fop.push(_fop);
+         }
+        }
+        else{
+            fop = initTab(nbtkt,"nonref");
+        }
+       
+
+
+        //* ----------$
+
+        // *--------- form of payment reference
+        const fopref_regex = /(?:card\s*number|apple\s*pay)\s*:\s*(?<fop_ref>\*+\d{4})/gi;
+        let fopref_list = getAllGroupsMatchReg(fopref_regex,val);
+        
+        let fopref =[];
+        let _fopref;
+        if(fopref_list.length > 0){
+            for(let {fop_ref} of fopref_list){
+            _fopref = fop_ref  ? fop_ref:"";
+            fopref.push(_fopref);
+           }
+        }
+        else{
+            fopref=initTab(nbtkt,"");
+        }
+        //* -----------------$
+
+
+        //*  $----------- Passenger
+
+        let passenger_regex = /passenger\s*details\s*(?<passenger>[\w\.\s]+)All\s*times\s*are\s*local/ig;
+        let _passenger_list = getAllGroupsMatchReg(passenger_regex,val);
+        let passenger_list = [];
+        _passenger_list.forEach(({passenger})=>{
+            passenger_list.push(passenger? passenger.trim() : "")
+        })
+
+        alert("passenger="+passenger_list);
+
+        //* --------- $
+
+        //* $------ Issuing office id
+
+        let issuing_oid_regex = /Invoice:\s*(?<issuing_office_id>(?:\w+\s*){3})/i;
+        let {issuing_office_id} = getGroupMatchReg(issuing_oid_regex,val);
+        let issuingoidorpcc = issuing_office_id||"";
+        //* ----------$
+
+        //* $-------------Passenger Number Record(pnr)/Booking Ref
+         let pnr_regex = /your\s*booking\s*is\s*confirmed\s*(?<pnr>\w+)/i;
+         let {pnr} = getGroupMatchReg(pnr_regex,val);
+
+         alert("pnr="+pnr);
+        //*-----------------$
+
+        //* -------$ iata
+         const iata_regex = /IATA\s*No.\s*(?<_iata>\d+)/i;
+         let {_iata} = getGroupMatchReg(iata_regex,val);
+         let iata = _iata ? _iata : "";
+        //*-------------
+
+        //*  $------------ Building taxes
+        let totaltax = [];
+        let airtax =[];
+
+        let _airtax_code,_airtax_amount;
+        let airtax_total=[];
+
+        let tax_group_regex = /(?<tax_group>Taxes\/fees[\s\w;\.,]+Please)/ig;
+        let tax_regex = /(?<airtax_code>\w{2})\s*[A-Z]{3}\s*(?<airtax_amount>\d+[.,]\d+)/ig;
+
+        let tax_group_tab = getNamedGroupMatchReg(tax_group_regex,val,'tax_group');
+
+        for(const tax_group of tax_group_tab){
+            if(tax_regex.test(tax_group)){
+                    let _taxes = getTaxes(tax_regex,tax_group);
+                    let ticket_airtax=[];
+                    let ticket_airtax_total=0;
+
+                    for(const {airtax_amount,airtax_code} of _taxes){
+
+                        if(airtax_amount){
+                            _airtax_amount = parseFloat(airtax_amount);
+                            ticket_airtax.push({"code":airtax_code,"amount":_airtax_amount});
+                            ticket_airtax_total+=_airtax_amount
+
+                        }
+                    }
+                    airtax.push(ticket_airtax);
+                    airtax_total.push(ticket_airtax_total);
+
+
+                }else{
+                    airtax.push([]);
+                    airtax_total.push(0);
+
+                }
+
+            }
+
+         alert('airtax_total='+airtax_total);
+         totaltax=airtax_total;
+
+        //* -------------------$
+
+
+        //* $------------ Total Fare(price)
+
+         const total_fare_regex = /Fare\s*total\s*[A-Z]{3}\s*(?<t_fare>\d+[.,]\d+(?:.\d{2})?)/ig;
+
+         let total_fare = [];
+         let total_fare_list = getNamedGroupMatchReg(total_fare_regex,val,'t_fare');
+         for(const t_fare of total_fare_list ){
+            total_fare.push(parseFloat(t_fare.replace(",","")||"0"));
+         }
+
+            alert('totalfare='+total_fare);
+        //* ------------------$
+
+        //* $------------- public fare
+        const public_fare_regex = /Base\s*Fare\s*[A-Z]{3}\s*(?<p_fare>\d+[.,]\d+(?:.\d{2})?)/ig;
+        let publicfare = [];
+        let public_fare_list = getNamedGroupMatchReg(public_fare_regex,val,'p_fare');
+
+        for(const p_fare of public_fare_list ){
+            publicfare.push(parseFloat(p_fare.replace(",","")||"0"));
+         }
+
+        alert('publicfare='+publicfare);
+
+        //* --------------$
+
+       //* $----------airline iata code
+
+         let airline_iata = "FZ";
+
+        //* ------------------$
+
+        //* $-------- (segment class & cabin)
+
+        const segments_class = initTab(NBTKTSEG,"");
+        const segments_cabin =[];
+        const cabin_regex = /(?<cabin>economy|premium|business|first)/ig;
+        const cabin_list = getAllGroupsMatchReg(cabin_regex, segments_region);
+      
+       
+        for (const { cabin } of cabin_list) {
+           
+            segments_cabin.push(cabin.toLowerCase() || "");
+            counter++;
+            if (counter < NBTKTSEG) {
+                segments_cabin.push(cabin.toLowerCase() || "");
+                counter++;
+            }
+        }
+        
+        //* --------------------$
+
+         //*---------  ticket reservation class & cabin
+
+        let ticket_reserv_class = segments_class[0];
+        let ticket_reserv_cabin = segments_cabin[0];
+
+       //* -----------$
+
+        //* $---------- flightNumbers
+
+            const flight_numbers_regex = /Flight\s(?<flight_number>[A-Z]{2}\s*\d{2,4}(?:\/[A-Z]{2}\s*\d{2,4})?)/g;
+            const flight_numbers_list = getAllGroupsMatchReg(flight_numbers_regex, segments_region);
+            let flightnumbers = [];
+            flight_numbers_list.forEach(({ flight_number }) => {
+                flightnumbers = flightnumbers.concat(flight_number.split("/"));
+            });
+
+
+        //* ------------$
+
+        //* $------------ (Number of Stops & Stop over city)
+
+            const stop_over_regex = /(?<stop_over>Stopover)\s*in\s*(?<stop_over_city>\w+)/g;
+            const stop_over_list = getAllGroupsMatchReg(stop_over_regex, segments_region);
+            let numberOfStops = [];
+            let stop_over_city_list = [];
+            if(stop_over_city_list.length > 0){
+                 stop_over_list.forEach(({ stop_over, stop_over_city }) => {
+                    let number_of_stops = stop_over ? 1 : 0;
+                    numberOfStops.push(number_of_stops);
+                    numberOfStops.push(0);
+                    stop_over_city_list.push(stop_over_city || "");
+                    stop_over_city_list.push("");
+              });
+            }
+            else{
+                numberOfStops = initTab(NBTKTSEG,0);
+                stop_over_city_list = initTab(NBTKTSEG,"");
+            }
+           
+
+        //* -----------$
+
+        //* $-------- Airport Codes & Itinerary
+        const destinationairportcodes = [];
+        const origineairportcodes = [];
+        let fullroute = "";
+        const departure_arrival_airport_code_regex = /(?<departure_airport_code>[A-Z]{3})\s*(?<arrival_airport_code>[A-Z]{3})/g;
+
+        const departure_arrival_airport_codes = getAllGroupsMatchReg(departure_arrival_airport_code_regex, segments_region);
+        departure_arrival_airport_codes.forEach(({ departure_airport_code, arrival_airport_code }) => {
+            destinationairportcodes.push(arrival_airport_code || "");
+            origineairportcodes.push(departure_airport_code || "");
+            fullroute += `${departure_airport_code} ${arrival_airport_code} `;
+
+        });
+
+        fullroute = fullroute.trim();
+        //* ----------------$
+
+        //* $----------- origin & destination citynames
+        const originecitynames = [];
+        const destinationcitynames = [];
+        const departure_arrival_citynames_regex = /(?:\n\s*(?<from>(?:[A-Z\(][a-z\-\)]+\s){2,4})\s*(?<to>(?:[A-Z\(][a-z\-\)]+\s){2,4})\s+)/g;
+
+        const departure_arrival_citynames = getAllGroupsMatchReg(departure_arrival_citynames_regex, segments_region);
+        departure_arrival_citynames.forEach(({ from, to }) => {
+            originecitynames.push(from.split(/\s/)[0] || "");
+            destinationcitynames.push(to.split(/\s/)[0] || "");
+
+        });
+
+        //* ---------$
+
+        
+       //* $--------- Departure & arrival times, flight durations
+        const flight_durations = [];
+        const arrivaltimes = [];
+        const departuretimes = [];
+        const joint_flightDurations_DepartureAndArrivalTimes_format_regex = /\d{2}:\d{2}[\w\s\-]+\d{2}h\s*\d{2}[\w\s\-]+\d{2}:\d{2}/g;
+
+        const flightDuration__departure_arrival_times__regex = /(?:(?<departure_time>\d{2}:\d{2})(?:[\w\s\-])+(?:(?<duration_hour>\d{2})h\s*(?<duration_min>\d{2}))(?:[\w\s\-])+(?<arrival_time>\d{2}:\d{2}))/g;
+
+        const departure_arrival_times_regex = /(?:(?<departure_time>\d{2}:\d{2})\s+(?<arrival_time>\d{2}:\d{2}))/g;
+        const flight_duration_regex = /(?:[\s\-])+(?<duration_hour>\d{2})h\s*(?<duration_min>\d{2})min(?:[\s\-])+/g;
+
+        //if  flight duration, arrival & departure times are joined in a segment 
+        if(joint_flightDurations_DepartureAndArrivalTimes_format_regex.test(segments_region)){
+            alert("joint-time-duration");
+          const flightDurations__departure_arrival_times = getAllGroupsMatchReg(flightDuration__departure_arrival_times__regex, segments_region);
+            flightDurations__departure_arrival_times.forEach(({ departure_time, duration_hour, duration_min, arrival_time }) => {
+                departuretimes.push(departure_time || '00:00:000');
+                arrivaltimes.push(arrival_time || '00:00:000');
+                flight_durations.push(`${duration_hour || '00'}:${duration_min || '00'}`);
+            });
+        }
+        // if light duration, arrival & departure times are separated in a segment
+        else{
+            alert("separated-time-duration");
+            const departure_arrival_times = getAllGroupsMatchReg(departure_arrival_times_regex,segments_region);
+            departure_arrival_times.forEach(({departure_time,arrival_time})=>{
+                 departuretimes.push(departure_time || '00:00:000');
+                 arrivaltimes.push(arrival_time || '00:00:000');
+            });
+
+            const flightDurations = getAllGroupsMatchReg(flight_duration_regex,segments_region);
+            flightDurations.forEach(({duration_hour, duration_min})=>{
+                 flight_durations.push(`${duration_hour || '00'}:${duration_min || '00'}`);
+            })
+        }
+        
+
+       //* ----------$
+       
+
+        //* $------   Departure Time & return time
+
+            let departuretime = departuretimes[0]||"00:00:000";
+            alert('departuretime='+departuretime);
+
+            let returntime = arrivaltimes[NBTKTSEG-1]||"00:00:000";
+            alert('returntime='+returntime);
+
+       //* --------------$
+
+
+       //* $--------- Departure & arrival terminals
+        const departure_terminals = [];
+        const arrival_terminals = [];
+        const terminals_regex = /(?:Terminal\s*(?<terminal_from>\w))(?:\s{6,}Terminal\s*(?<terminal_to>\w))|(?:Terminal\s*(?<terminal_from_only>\w))|(?:\n\s{6,}Terminal\s*(?<terminal_to_only>\w))/g;
+
+        const terminals = getAllGroupsMatchReg(terminals_regex, segments_region);
+        console.log(terminals);
+
+        terminals.forEach(({ terminal_from, terminal_to, terminal_from_only, terminal_to_only }) => {
+            let terminals = { terminal_from: "", terminal_to: "" };
+
+            if (terminal_from && terminal_to && !terminal_from_only && !terminal_to_only) {
+                terminals.terminal_from = terminal_from;
+                terminals.terminal_to = terminal_to;
+            }
+            else if (!terminal_from && !terminal_to && terminal_from_only && !terminal_to_only) {
+                terminals.terminal_from = terminal_from_only;
+            }
+            else if (!terminal_from && !terminal_to && !terminal_from_only && terminal_to_only) {
+                terminals.terminal_to = terminal_to_only;
+            }
+
+            departure_terminals.push(terminals.terminal_from);
+            arrival_terminals.push(terminals.terminal_to);
+
+        });
+
+       //* -------$
+
+
+       //* $--------- Fare basis
+         const fareBasis = initTab(NBTKTSEG,"");
+       //* ----------$
+
+
+       //* $------- PassengerNameRecord(PNR) status code
+
+        let pnr_status_codes= initTab(NBTKTSEG,getPNRstatusCodeValue(""));
+
+        //* ---------------$
+
+        //* $-------- franchise
+
+        const franchise_regex = /(?<franchise>\w+\s*kg)\s*hand\s*baggage\s*\(\w+\)/ig;
+        const franchise_list = [];
+
+        const _franchise_list = getAllGroupsMatchReg(franchise_regex, segments_region);
+        counter = 0;
+
+        for (const { franchise } of _franchise_list) {
+            franchise_list.push(franchise || "");
+            counter++;
+            if (counter < NBTKTSEG) {
+                franchise_list.push(franchise || "");
+                counter++;
+            }
+        }
+
+        //* --------------$
+
+        //* $-----------meal
+            const meal_regex = /(?<meal>\w+\s*meal)\s*\(\w+\)/ig;
+            const meal_list = [];
+            const meals = getAllGroupsMatchReg(meal_regex, segments_region);
+            meals.forEach(({ meal }) => {
+                meal_list.push(meal || "");
+
+            });
+
+        //* -------------$
+
+        //* $-----------seat
+            const seat_regex = /(?<seat>unassigned)/ig;
+            const seat_list = [];
+            const seats = getAllGroupsMatchReg(seat_regex, segments_region);
+            seats.forEach(({ seat }) => {
+                seat_list.push(seat);
+            });
+
+        //* -------------$
+
+        //* $----------- Segment
+        const segments = [];
+
+        for(let i=0; i<NBTKTSEG; i++){
+
+            segments.push({
+                class:segments_class[i],
+                cabin:segments_cabin[i],
+                departure_date:departuredates[i],
+                departure_time:departuretimes[i],
+                fare_basis:fareBasis[i],
+                leg_price:0,
+                arrival_city:destinationcitynames[i],
+                arrival_airport_code:destinationairportcodes[i],
+                departure_city:originecitynames[i],
+                departure_airport_code:origineairportcodes[i],
+                id_airline:airline_iata,
+                code_share:"",
+                arrival_date:arrivaldates[i],
+                arrival_time:arrivaltimes[i],
+                flying_time:flight_durations[i],
+                mileage:0,
+                equipment:"",
+                stopover_city:stop_over_city_list[i],
+                is_smoking:false,
+                meal:meal_list[i],
+                number_stop:numberOfStops[i],
+                franchise:franchise_list[i],
+                flight_number:flightnumbers[i],
+                departure_terminal:departure_terminals[i],
+                arrival_terminal:arrival_terminals[i],
+                status:pnr_status_codes[i],
+                seat:seat_list[i]
+
+            });
+        }
+
+        //* ---------------$
+
+
+
+        let dest = destinationcitynames[destinationcitynames.length-1];
+        let remark=[];
+        let airline_name = "flyDubai"
+        let is_open = false;
+        let fare_cal = true;
+        let total_price = [];
+        let status = "pending";
+        let loyalty_card = "";
+        let total_net_collection = 0;
+        let product_type = "flight";
+        let void_airline = airlinecode;
+        let markup = [];
+        let is_void = false;
+        let transtype = "sales";
+        let channel = 'non_gds';
+        let remittance = [];
+        let penality = 0;
+        let totalfeenet  = 0;
+        let totaltaxfees = 0;
+        let totaltaxcom = 0;
+        let totalshare = 0;
+        let air_fees = serfee;
+        let comrate = -1;
+        let comamount = 0;
+        let discamount = 0;
+        let booking_oid = issuingoidorpcc;
+        let traveler = 1;
+        let exchange_num = "";
+        let description = "";
+        let abnote = "";
+        let resclass = ticket_reserv_class;
+        let cabin = ticket_reserv_cabin;
+        let discount_rate = 0;
+        let is_incomplete = true;
+        let trip_merge_num = "";
+        let customer = "";
+        let product = "myflight";
+        let supplier = "myflight";
+        let ab_invoice = initTab(nbtkt,[]);
+        let customer_id = initTab(nbtkt,[]);
+        let traveler_id = initTab(nbtkt,[]);
+        let consultant = "";
+        let in_out = "international";
+        let reason = "";
+        let totaltaxfare = 0;
+        let pubfare = publicfare;
+        let negfare = pubfare;
+        let agent = "";
+
+
+
+
+            for(var i=0;i<nbtkt;i++){
+                totalfeenet=parseFloat(serfee[i]);
+
+                total_price.push(parseFloat(pubfare[i]) + parseFloat(totaltax[i]) - parseFloat(discamount) - parseFloat(penality) + parseFloat(totalfeenet));
+
+                remittance.push(parseFloat(pubfare[i]) + parseFloat(totaltax[i]) - parseFloat(comamount));
+
+                markup.push(pubfare[i] - negfare[i]);
+
+                total_net_collection = parseFloat(comamount) + parseFloat(totalfeenet) + parseFloat(markup[i]);
+
+                totalfarenet.push(parseFloat(pubfare[i]) + parseFloat(totaltax[i]));
+
+            }
+
+
+        // Building sales
+        let booking = [];
+        if (nbtkt) {
+
+        for(let i=0; i<nbtkt;i++){
+            booking[i] = {
+                source: "email",
+                table: "air_booking",
+                issuing_date: issueddate,
+                commission_type: "rate",
+                total_price:total_price[i],
+                status:status,
+                loyalty_card:loyalty_card,
+                total_net_collection:total_net_collection,
+                product_type:product_type,
+                pnr:pnr,
+                void_airline : void_airline,
+                is_void: is_void,
+                transaction_type: transtype,
+                channel : channel,
+                return_date: returndate,
+                return_time : returntime,
+                is_open: is_open,
+                ticket_number: ticketnumber[i],
+                conjunction_number : conjnumber[i],
+                document_type: doctype[i],
+                published_fare : pubfare[i],
+                negotiated_fare: negfare[i],
+                remittance:remittance[i],
+                markup:markup[i],
+                penality: penality,
+                total_air_taxes: totaltax[i],
+                total_fare_net: totalfarenet[i],
+                total_fees_net: totalfeenet,
+                total_taxes_fees: totaltaxfees,
+                total_taxes_fare: totaltaxfare,
+                total_taxes_commission: totaltaxcom,
+                total_share : totalshare,
+                fee : air_fees[i],
+                commission_rate : comrate,
+                commission_amount : comamount,
+                discount_amount: discamount,
+                fop : fop[i],
+                fop_ref : fopref[i],
+                booking_oid : booking_oid,
+                issuing_oid : issuingoidorpcc,
+                iata : iata,
+                traveler_number: i+1,
+                traveler_name : passenger_list[i],
+                air_taxes : airtax[i],
+                segment : segments,
+                exchange_number : exchange_num,
+                remark : remark,
+                description : description,
+                notes : abnote,
+                class : resclass,
+                cabin : cabin,
+                discount_rate: discount_rate,
+                is_incomplete : is_incomplete,
+                trip_merged_number : trip_merge_num,
+                id_customer : customer,
+                id_airline : airlinecode,
+                id_currency : currency,
+                id_product : product,
+                id_supplier : supplier,
+                id_consultant : consultant,
+                id_customer : customer_id[i],
+                id_traveler : traveler_id[i],
+                id_invoice : ab_invoice[i],
+                id_agent_sign : agent,
+                airline_iata : airline_iata,
+                airline : airline_name,
+                destination: dest,
+                itinerary : fullroute,
+                currency_rate : currency_rate,
+                int_dom: in_out,
+                departure_date: departuredate,
+                departure_time: departuretime
+            };
+
+          }
+        }
+
+
+        return {
+                TOTRASH: totrash,
+                ERRMSG : errmsg, // Error message when totrash is true
+                BOOKING: booking
+
+            }
+
+    }
